@@ -1,0 +1,510 @@
+import java.util.Scanner;
+
+// ================= CUSTOM EXCEPTIONS =================
+
+class InsufficientBalanceException extends Exception {
+    public InsufficientBalanceException(String message) {
+        super(message);
+    }
+}
+
+class InvalidAmountException extends Exception {
+    public InvalidAmountException(String message) {
+        super(message);
+    }
+}
+
+class AccountNotFoundException extends Exception {
+    public AccountNotFoundException(String message) {
+        super(message);
+    }
+}
+
+// ================= BASE ACCOUNT CLASS =================
+
+abstract class BankAccount {
+    // Encapsulation: private fields
+    private int accountNumber;
+    private String accountHolder;
+    private double balance;
+
+    public BankAccount(int accountNumber, String accountHolder, double balance)
+            throws InvalidAmountException {
+
+        if (balance < 0) {
+            throw new InvalidAmountException("Initial balance cannot be negative.");
+        }
+
+        this.accountNumber = accountNumber;
+        this.accountHolder = accountHolder;
+        this.balance = balance;
+    }
+
+    // Getters
+    public int getAccountNumber() {
+        return accountNumber;
+    }
+
+    public String getAccountHolder() {
+        return accountHolder;
+    }
+
+    public double getBalance() {
+        return balance;
+    }
+
+    // Protected setter for subclasses
+    protected void setBalance(double balance) {
+        this.balance = balance;
+    }
+
+    // Deposit
+    public void deposit(double amount) throws InvalidAmountException {
+        if (amount <= 0) {
+            throw new InvalidAmountException(
+                    "Deposit amount must be greater than zero."
+            );
+        }
+
+        balance += amount;
+        System.out.println("₹" + amount + " deposited successfully.");
+    }
+
+    // Withdraw
+    public void withdraw(double amount)
+            throws InvalidAmountException, InsufficientBalanceException {
+
+        if (amount <= 0) {
+            throw new InvalidAmountException(
+                    "Withdrawal amount must be greater than zero."
+            );
+        }
+
+        if (amount > balance) {
+            throw new InsufficientBalanceException(
+                    "Insufficient balance. Available balance: ₹" + balance
+            );
+        }
+
+        balance -= amount;
+        System.out.println("₹" + amount + " withdrawn successfully.");
+    }
+
+    // Abstract method - inheritance/polymorphism
+    public abstract void displayAccountType();
+
+    public void displayAccountDetails() {
+        System.out.println("\n----- Account Details -----");
+        System.out.println("Account Number : " + accountNumber);
+        System.out.println("Account Holder : " + accountHolder);
+        System.out.println("Balance        : ₹" + balance);
+    }
+}
+
+// ================= SAVINGS ACCOUNT =================
+
+class SavingsAccount extends BankAccount {
+
+    private double interestRate;
+
+    public SavingsAccount(int accountNumber, String accountHolder,
+                           double balance, double interestRate)
+            throws InvalidAmountException {
+
+        super(accountNumber, accountHolder, balance);
+
+        if (interestRate < 0) {
+            throw new InvalidAmountException(
+                    "Interest rate cannot be negative."
+            );
+        }
+
+        this.interestRate = interestRate;
+    }
+
+    public double getInterestRate() {
+        return interestRate;
+    }
+
+    // Method specific to SavingsAccount
+    public void addInterest() throws InvalidAmountException {
+        double interest = getBalance() * interestRate / 100;
+        deposit(interest);
+
+        System.out.println(
+                "Interest added: ₹" + interest
+        );
+    }
+
+    @Override
+    public void displayAccountType() {
+        System.out.println("Account Type   : Savings Account");
+    }
+}
+
+// ================= CURRENT ACCOUNT =================
+
+class CurrentAccount extends BankAccount {
+
+    private double overdraftLimit;
+
+    public CurrentAccount(int accountNumber, String accountHolder,
+                           double balance, double overdraftLimit)
+            throws InvalidAmountException {
+
+        super(accountNumber, accountHolder, balance);
+
+        if (overdraftLimit < 0) {
+            throw new InvalidAmountException(
+                    "Overdraft limit cannot be negative."
+            );
+        }
+
+        this.overdraftLimit = overdraftLimit;
+    }
+
+    public double getOverdraftLimit() {
+        return overdraftLimit;
+    }
+
+    @Override
+    public void withdraw(double amount)
+            throws InvalidAmountException, InsufficientBalanceException {
+
+        if (amount <= 0) {
+            throw new InvalidAmountException(
+                    "Withdrawal amount must be greater than zero."
+            );
+        }
+
+        if (amount > getBalance() + overdraftLimit) {
+            throw new InsufficientBalanceException(
+                    "Transaction exceeds available balance and overdraft limit."
+            );
+        }
+
+        setBalance(getBalance() - amount);
+
+        System.out.println("₹" + amount + " withdrawn successfully.");
+    }
+
+    @Override
+    public void displayAccountType() {
+        System.out.println("Account Type   : Current Account");
+    }
+}
+
+// ================= BANK CLASS =================
+
+class Bank {
+
+    private BankAccount[] accounts;
+    private int accountCount;
+
+    public Bank(int capacity) {
+        accounts = new BankAccount[capacity];
+        accountCount = 0;
+    }
+
+    // Create account
+    public void addAccount(BankAccount account) {
+
+        if (accountCount >= accounts.length) {
+            System.out.println("Bank account storage is full.");
+            return;
+        }
+
+        accounts[accountCount++] = account;
+
+        System.out.println(
+                "Account created successfully. Account Number: "
+                        + account.getAccountNumber()
+        );
+    }
+
+    // Find account
+    public BankAccount findAccount(int accountNumber)
+            throws AccountNotFoundException {
+
+        for (int i = 0; i < accountCount; i++) {
+
+            if (accounts[i].getAccountNumber() == accountNumber) {
+                return accounts[i];
+            }
+        }
+
+        throw new AccountNotFoundException(
+                "Account " + accountNumber + " not found."
+        );
+    }
+
+    // Deposit
+    public void deposit(int accountNumber, double amount)
+            throws AccountNotFoundException, InvalidAmountException {
+
+        BankAccount account = findAccount(accountNumber);
+        account.deposit(amount);
+    }
+
+    // Withdraw
+    public void withdraw(int accountNumber, double amount)
+            throws AccountNotFoundException,
+                   InvalidAmountException,
+                   InsufficientBalanceException {
+
+        BankAccount account = findAccount(accountNumber);
+        account.withdraw(amount);
+    }
+
+    // Transfer money
+    public void transfer(int fromAccount, int toAccount, double amount)
+            throws AccountNotFoundException,
+                   InvalidAmountException,
+                   InsufficientBalanceException {
+
+        if (amount <= 0) {
+            throw new InvalidAmountException(
+                    "Transfer amount must be greater than zero."
+            );
+        }
+
+        BankAccount sender = findAccount(fromAccount);
+        BankAccount receiver = findAccount(toAccount);
+
+        // Withdraw first
+        sender.withdraw(amount);
+
+        try {
+            // Deposit into receiver
+            receiver.deposit(amount);
+
+            System.out.println(
+                    "₹" + amount + " transferred successfully from "
+                            + fromAccount + " to " + toAccount
+            );
+
+        } catch (InvalidAmountException e) {
+
+            // Rollback transaction if deposit fails
+            try {
+                sender.deposit(amount);
+            } catch (InvalidAmountException rollbackException) {
+                System.out.println("Critical rollback failure.");
+            }
+
+            throw e;
+        }
+    }
+
+    // Display all accounts
+    public void displayAllAccounts() {
+
+        if (accountCount == 0) {
+            System.out.println("No accounts available.");
+            return;
+        }
+
+        for (int i = 0; i < accountCount; i++) {
+            accounts[i].displayAccountType();
+            accounts[i].displayAccountDetails();
+        }
+    }
+}
+
+// ================= MAIN CLASS =================
+
+public class BankingSystem {
+
+    public static void main(String[] args) {
+
+        Scanner scanner = new Scanner(System.in);
+        Bank bank = new Bank(100);
+
+        while (true) {
+
+            System.out.println("\n========== BANKING SYSTEM ==========");
+            System.out.println("1. Create Savings Account");
+            System.out.println("2. Create Current Account");
+            System.out.println("3. Deposit");
+            System.out.println("4. Withdraw");
+            System.out.println("5. Transfer Money");
+            System.out.println("6. Display Account");
+            System.out.println("7. Display All Accounts");
+            System.out.println("8. Add Interest");
+            System.out.println("9. Exit");
+            System.out.print("Enter your choice: ");
+
+            try {
+
+                int choice = scanner.nextInt();
+
+                switch (choice) {
+
+                    case 1:
+                        System.out.print("Enter account number: ");
+                        int savingsNumber = scanner.nextInt();
+
+                        scanner.nextLine();
+
+                        System.out.print("Enter account holder name: ");
+                        String savingsName = scanner.nextLine();
+
+                        System.out.print("Enter initial balance: ");
+                        double savingsBalance = scanner.nextDouble();
+
+                        System.out.print("Enter interest rate (%): ");
+                        double interestRate = scanner.nextDouble();
+
+                        SavingsAccount savingsAccount =
+                                new SavingsAccount(
+                                        savingsNumber,
+                                        savingsName,
+                                        savingsBalance,
+                                        interestRate
+                                );
+
+                        bank.addAccount(savingsAccount);
+                        break;
+
+                    case 2:
+                        System.out.print("Enter account number: ");
+                        int currentNumber = scanner.nextInt();
+
+                        scanner.nextLine();
+
+                        System.out.print("Enter account holder name: ");
+                        String currentName = scanner.nextLine();
+
+                        System.out.print("Enter initial balance: ");
+                        double currentBalance = scanner.nextDouble();
+
+                        System.out.print("Enter overdraft limit: ");
+                        double overdraftLimit = scanner.nextDouble();
+
+                        CurrentAccount currentAccount =
+                                new CurrentAccount(
+                                        currentNumber,
+                                        currentName,
+                                        currentBalance,
+                                        overdraftLimit
+                                );
+
+                        bank.addAccount(currentAccount);
+                        break;
+
+                    case 3:
+                        System.out.print("Enter account number: ");
+                        int depositAccount = scanner.nextInt();
+
+                        System.out.print("Enter amount: ");
+                        double depositAmount = scanner.nextDouble();
+
+                        bank.deposit(
+                                depositAccount,
+                                depositAmount
+                        );
+                        break;
+
+                    case 4:
+                        System.out.print("Enter account number: ");
+                        int withdrawAccount = scanner.nextInt();
+
+                        System.out.print("Enter amount: ");
+                        double withdrawAmount = scanner.nextDouble();
+
+                        bank.withdraw(
+                                withdrawAccount,
+                                withdrawAmount
+                        );
+                        break;
+
+                    case 5:
+                        System.out.print("Enter sender account: ");
+                        int sender = scanner.nextInt();
+
+                        System.out.print("Enter receiver account: ");
+                        int receiver = scanner.nextInt();
+
+                        System.out.print("Enter transfer amount: ");
+                        double transferAmount = scanner.nextDouble();
+
+                        bank.transfer(
+                                sender,
+                                receiver,
+                                transferAmount
+                        );
+                        break;
+
+                    case 6:
+                        System.out.print("Enter account number: ");
+                        int searchAccount = scanner.nextInt();
+
+                        BankAccount account =
+                                bank.findAccount(searchAccount);
+
+                        account.displayAccountType();
+                        account.displayAccountDetails();
+                        break;
+
+                    case 7:
+                        bank.displayAllAccounts();
+                        break;
+
+                    case 8:
+                        System.out.print("Enter savings account number: ");
+                        int interestAccount = scanner.nextInt();
+
+                        BankAccount foundAccount =
+                                bank.findAccount(interestAccount);
+
+                        if (foundAccount instanceof SavingsAccount) {
+
+                            SavingsAccount savings =
+                                    (SavingsAccount) foundAccount;
+
+                            savings.addInterest();
+
+                        } else {
+                            System.out.println(
+                                    "Interest can only be added to a Savings Account."
+                            );
+                        }
+
+                        break;
+
+                    case 9:
+                        System.out.println(
+                                "Thank you for using the Banking System."
+                        );
+                        scanner.close();
+                        return;
+
+                    default:
+                        System.out.println(
+                                "Invalid choice. Please try again."
+                        );
+                }
+
+            } catch (AccountNotFoundException |
+                     InsufficientBalanceException |
+                     InvalidAmountException e) {
+
+                System.out.println("ERROR: " + e.getMessage());
+
+            } catch (java.util.InputMismatchException e) {
+
+                System.out.println(
+                        "ERROR: Please enter valid numeric input."
+                );
+
+                scanner.nextLine();
+
+            } catch (Exception e) {
+
+                System.out.println(
+                        "Unexpected error: " + e.getMessage()
+                );
+            }
+        }
+    }
+}
