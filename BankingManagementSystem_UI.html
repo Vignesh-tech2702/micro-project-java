@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Banking Management System</title>
+<style>
+:root{
+  --primary:#2563eb;
+  --primary-dark:#1d4ed8;
+  --bg:#f5f7fb;
+  --card:#ffffff;
+  --text:#172033;
+  --muted:#6b7280;
+  --border:#e5e7eb;
+  --success:#16a34a;
+  --danger:#dc2626;
+  --warning:#d97706;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+.app{display:flex;min-height:100vh}
+.sidebar{width:245px;background:#111827;color:#fff;padding:22px 15px;position:fixed;top:0;bottom:0;left:0}
+.logo{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:800;padding:8px 10px 28px}
+.logo-icon{width:38px;height:38px;border-radius:11px;background:var(--primary);display:grid;place-items:center}
+.nav{display:flex;flex-direction:column;gap:6px}
+.nav button{border:0;background:transparent;color:#cbd5e1;text-align:left;padding:12px 13px;border-radius:9px;font-size:14px;cursor:pointer}
+.nav button:hover,.nav button.active{background:#1f2937;color:#fff}
+.nav button.active{border-left:3px solid #60a5fa}
+.main{margin-left:245px;width:calc(100% - 245px)}
+.topbar{height:70px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:5}
+.search{border:1px solid var(--border);border-radius:9px;padding:10px 13px;width:280px;outline:none}
+.profile{display:flex;align-items:center;gap:10px}
+.avatar{width:38px;height:38px;border-radius:50%;background:#dbeafe;color:var(--primary);display:grid;place-items:center;font-weight:800}
+.content{padding:28px}
+.page{display:none}
+.page.active{display:block}
+h1{font-size:26px;margin-bottom:6px}
+.subtitle{color:var(--muted);font-size:14px;margin-bottom:24px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:19px;box-shadow:0 2px 8px rgba(15,23,42,.03)}
+.stat-label{font-size:13px;color:var(--muted);margin-bottom:10px}
+.stat-value{font-size:24px;font-weight:800}
+.stat-icon{float:right;font-size:24px}
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:18px}
+.section-title{font-size:17px;font-weight:750;margin-bottom:15px}
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.action{padding:16px;border:1px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;text-align:left}
+.action:hover{border-color:#93c5fd;background:#f8fbff}
+.action b{display:block;margin-bottom:5px}
+.action span{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:13px 10px;border-bottom:1px solid var(--border);font-size:13px;text-align:left}
+th{color:var(--muted);font-weight:600}
+.success{color:var(--success);font-weight:700}
+.danger{color:var(--danger);font-weight:700}
+.account-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.account-card{position:relative;overflow:hidden}
+.account-card:after{content:"";position:absolute;right:-35px;top:-35px;width:110px;height:110px;border-radius:50%;background:#eff6ff}
+.badge{display:inline-block;padding:5px 9px;border-radius:20px;background:#eff6ff;color:var(--primary);font-size:11px;font-weight:700;margin-bottom:15px}
+.account-number{color:var(--muted);font-size:13px;margin-bottom:8px}
+.balance{font-size:29px;font-weight:800;margin:8px 0 18px}
+.btn{border:0;border-radius:9px;padding:11px 15px;background:var(--primary);color:#fff;font-weight:700;cursor:pointer}
+.btn:hover{background:var(--primary-dark)}
+.btn.secondary{background:#eef2f7;color:#334155}
+.btn.danger-btn{background:#fee2e2;color:#b91c1c}
+.form-card{max-width:700px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.field{margin-bottom:15px}
+.field.full{grid-column:1/-1}
+label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}
+input,select{width:100%;padding:11px 12px;border:1px solid #d9dee7;border-radius:9px;outline:none;background:#fff}
+input:focus,select:focus{border-color:#60a5fa;box-shadow:0 0 0 3px #dbeafe}
+.hidden{display:none!important}
+.empty{padding:35px;text-align:center;color:var(--muted)}
+.toast{position:fixed;right:25px;bottom:25px;background:#111827;color:#fff;padding:13px 18px;border-radius:10px;display:none;z-index:20;box-shadow:0 8px 25px rgba(0,0,0,.2)}
+.toast.show{display:block}
+@media(max-width:1000px){
+  .cards{grid-template-columns:repeat(2,1fr)}
+  .grid2{grid-template-columns:1fr}
+}
+@media(max-width:720px){
+  .sidebar{width:70px;padding:18px 8px}
+  .logo span,.nav button span{display:none}
+  .logo{justify-content:center;padding-bottom:20px}
+  .nav button{text-align:center}
+  .main{margin-left:70px;width:calc(100% - 70px)}
+  .topbar{padding:0 15px}.search{width:160px}
+  .content{padding:18px}.account-grid,.form-grid{grid-template-columns:1fr}
+  .cards{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo"><div class="logo-icon">🏦</div><span>Banking System</span></div>
+    <nav class="nav">
+      <button class="active" onclick="showPage('dashboard',this)">🏠 <span>Dashboard</span></button>
+      <button onclick="showPage('accounts',this)">💳 <span>Accounts</span></button>
+      <button onclick="showPage('deposit',this)">💰 <span>Deposit</span></button>
+      <button onclick="showPage('withdraw',this)">💸 <span>Withdraw</span></button>
+      <button onclick="showPage('transfer',this)">🔄 <span>Transfer</span></button>
+      <button onclick="showPage('history',this)">📊 <span>History</span></button>
+      <button onclick="showPage('interest',this)">📈 <span>Interest</span></button>
+      <button onclick="showPage('create',this)">➕ <span>Create Account</span></button>
+      <button onclick="showPage('remove',this)">🗑️ <span>Remove Account</span></button>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <input class="search" placeholder="Search accounts..." oninput="searchAccounts(this.value)">
+      <div class="profile"><div class="avatar">VK</div><div><b>Vignesh Kumar</b><br><small style="color:#6b7280">Administrator</small></div></div>
+    </header>
+
+    <section class="content">
+      <div id="dashboard" class="page active">
+        <h1>Good Evening, Vignesh 👋</h1>
+        <p class="subtitle">Welcome to your Banking Management Dashboard</p>
+        <div class="cards">
+          <div class="card"><span class="stat-icon">💳</span><div class="stat-label">Total Accounts</div><div class="stat-value" id="statAccounts">0</div></div>
+          <div class="card"><span class="stat-icon">💰</span><div class="stat-label">Total Balance</div><div class="stat-value" id="statBalance">₹0</div></div>
+          <div class="card"><span class="stat-icon">📊</span><div class="stat-label">Transactions</div><div class="stat-value" id="statTransactions">0</div></div>
+          <div class="card"><span class="stat-icon">🏦</span><div class="stat-label">Bank Status</div><div class="stat-value" style="font-size:20px;color:var(--success)">Active</div></div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="section-title">Quick Actions</div>
+            <div class="actions">
+              <div class="action" onclick="showPage('deposit')"><b>💰 Deposit</b><span>Add money to an account</span></div>
+              <div class="action" onclick="showPage('withdraw')"><b>💸 Withdraw</b><span>Withdraw available funds</span></div>
+              <div class="action" onclick="showPage('transfer')"><b>🔄 Transfer</b><span>Transfer between accounts</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-title">Recent Transactions</div>
+            <div id="recent"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="accounts" class="page">
+        <h1>Accounts</h1><p class="subtitle">View and manage all bank accounts</p>
+        <div id="accountGrid" class="account-grid"></div>
+      </div>
+
+      <div id="create" class="page">
+        <h1>Create New Account</h1><p class="subtitle">Create a Savings or Current Account</p>
+        <div class="card form-card">
+          <div class="form-grid">
+            <div class="field"><label>Account Number</label><input id="newNumber" type="number" placeholder="e.g. 10003"></div>
+            <div class="field"><label>Account Holder Name</label><input id="newName" placeholder="Enter full name"></div>
+            <div class="field"><label>Account Type</label><select id="newType" onchange="toggleTypeFields()"><option>Savings</option><option>Current</option></select></div>
+            <div class="field"><label>Initial Balance</label><input id="newBalance" type="number" min="0" placeholder="₹0"></div>
+            <div class="field" id="interestField"><label>Interest Rate (%)</label><input id="newInterest" type="number" value="4.5" min="0"></div>
+            <div class="field hidden" id="overdraftField"><label>Overdraft Limit</label><input id="newOverdraft" type="number" value="5000" min="0"></div>
+          </div>
+          <button class="btn" onclick="createAccount()">Create Account</button>
+        </div>
+      </div>
+
+      <div id="deposit" class="page">
+        <h1>Deposit Money</h1><p class="subtitle">Add money to a bank account</p>
+        <div class="card form-card">
+          <div class="field"><label>Account</label><select id="depositAccount"></select></div>
+          <div class="field"><label>Deposit Amount</label><input id="depositAmount" type="number" min="1" placeholder="Enter amount"></div>
+          <button class="btn" onclick="deposit()">Deposit Money</button>
+        </div>
+      </div>
+
+      <div id="withdraw" class="page">
+        <h1>Withdraw Money</h1><p class="subtitle">Withdraw money from an account</p>
+        <div class="card form-card">
+          <div class="field"><label>Account</label><select id="withdrawAccount"></select></div>
+          <div class="field"><label>Withdrawal Amount</label><input id="withdrawAmount" type="number" min="1" placeholder="Enter amount"></div>
+          <button class="btn" onclick="withdraw()">Withdraw</button>
+        </div>
+      </div>
+
+      <div id="transfer" class="page">
+        <h1>Transfer Money</h1><p class="subtitle">Transfer money from one account to another</p>
+        <div class="card form-card">
+          <div class="field"><label>From Account</label><select id="fromAccount"></select></div>
+          <div class="field"><label>To Account</label><select id="toAccount"></select></div>
+          <div class="field"><label>Transfer Amount</label><input id="transferAmount" type="number" min="1" placeholder="Enter amount"></div>
+          <button class="btn" onclick="transfer()">Confirm Transfer</button>
+        </div>
+      </div>
+
+      <div id="interest" class="page">
+        <h1>Add Interest</h1><p class="subtitle">Calculate and add interest to a Savings Account</p>
+        <div class="card form-card">
+          <div class="field"><label>Savings Account</label><select id="interestAccount"></select></div>
+          <button class="btn" onclick="addInterest()">Calculate & Add Interest</button>
+        </div>
+      </div>
+
+      <div id="history" class="page">
+        <h1>Transaction History</h1><p class="subtitle">All deposits, withdrawals, transfers and interest transactions</p>
+        <div class="card">
+          <div class="field" style="max-width:320px"><label>Filter Account</label><select id="historyAccount" onchange="renderHistory()"></select></div>
+          <div style="overflow:auto"><table><thead><tr><th>Date</th><th>Account</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead><tbody id="historyBody"></tbody></table></div>
+        </div>
+      </div>
+
+      <div id="remove" class="page">
+        <h1>Remove Account</h1><p class="subtitle">Remove an existing bank account</p>
+        <div class="card form-card">
+          <div class="field"><label>Select Account</label><select id="removeAccount"></select></div>
+          <button class="btn danger-btn" onclick="removeAccount()">Remove Account</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+let accounts = [
+  {number:10001,name:"Vignesh Kumar",type:"Savings",balance:15000,interest:4.5,overdraft:0},
+  {number:10002,name:"Rahul Kumar",type:"Current",balance:25000,interest:0,overdraft:5000}
+];
+let transactions = [
+  {date:"25 Sep 2026",account:10001,type:"Deposit",amount:5000,status:"Success"},
+  {date:"25 Sep 2026",account:10001,type:"Transfer",amount:-2500,status:"Success"},
+  {date:"24 Sep 2026",account:10002,type:"Deposit",amount:3000,status:"Success"}
+];
+
+function money(n){return "₹"+Number(n).toLocaleString("en-IN",{maximumFractionDigits:2})}
+function toast(msg){
+  const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),2500);
+}
+function showPage(id,btn){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
+  if(btn) btn.classList.add("active");
+  refresh();
+}
+function getAccount(num){return accounts.find(a=>a.number===Number(num))}
+function addTransaction(account,type,amount){
+  transactions.unshift({date:new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}),account,type,amount,status:"Success"});
+}
+function createAccount(){
+  const number=Number(document.getElementById("newNumber").value), name=document.getElementById("newName").value.trim();
+  const type=document.getElementById("newType").value, balance=Number(document.getElementById("newBalance").value);
+  const interest=Number(document.getElementById("newInterest").value)||0, overdraft=Number(document.getElementById("newOverdraft").value)||0;
+  if(!number||!name||balance<0){toast("⚠ Please enter valid account details");return}
+  if(getAccount(number)){toast("⚠ Account number already exists");return}
+  accounts.push({number,name,type,balance,interest:type==="Savings"?interest:0,overdraft:type==="Current"?overdraft:0});
+  toast("✓ Account created successfully");
+  document.getElementById("newNumber").value="";document.getElementById("newName").value="";document.getElementById("newBalance").value="";
+  refresh();
+}
+function deposit(){
+  const a=getAccount(document.getElementById("depositAccount").value), amt=Number(document.getElementById("depositAmount").value);
+  if(!a||amt<=0){toast("⚠ Invalid deposit amount");return}
+  a.balance+=amt;addTransaction(a.number,"Deposit",amt);document.getElementById("depositAmount").value="";
+  toast("✓ Deposit successful: "+money(amt));refresh();
+}
+function withdraw(){
+  const a=getAccount(document.getElementById("withdrawAccount").value), amt=Number(document.getElementById("withdrawAmount").value);
+  if(!a||amt<=0){toast("⚠ Invalid withdrawal amount");return}
+  if(amt>a.balance+(a.overdraft||0)){toast("⚠ Insufficient balance / overdraft limit exceeded");return}
+  a.balance-=amt;addTransaction(a.number,"Withdrawal",-amt);document.getElementById("withdrawAmount").value="";
+  toast("✓ Withdrawal successful: "+money(amt));refresh();
+}
+function transfer(){
+  const from=getAccount(document.getElementById("fromAccount").value), to=getAccount(document.getElementById("toAccount").value), amt=Number(document.getElementById("transferAmount").value);
+  if(!from||!to||from.number===to.number||amt<=0){toast("⚠ Please enter valid transfer details");return}
+  if(amt>from.balance){toast("⚠ Insufficient balance for transfer");return}
+  from.balance-=amt;to.balance+=amt;
+  addTransaction(from.number,"Transfer",-amt);addTransaction(to.number,"Received",amt);
+  document.getElementById("transferAmount").value="";toast("✓ Transfer successful: "+money(amt));refresh();
+}
+function addInterest(){
+  const a=getAccount(document.getElementById("interestAccount").value);
+  if(!a||a.type!=="Savings"){toast("⚠ Select a Savings Account");return}
+  const interest=a.balance*a.interest/100;a.balance+=interest;addTransaction(a.number,"Interest",interest);
+  toast("✓ Interest added: "+money(interest));refresh();
+}
+function removeAccount(){
+  const n=Number(document.getElementById("removeAccount").value), a=getAccount(n);
+  if(!a){toast("⚠ Account not found");return}
+  if(!confirm("Remove account "+n+"?"))return;
+  accounts=accounts.filter(x=>x.number!==n);toast("✓ Account removed successfully");refresh();
+}
+function toggleTypeFields(){
+  const savings=document.getElementById("newType").value==="Savings";
+  document.getElementById("interestField").classList.toggle("hidden",!savings);
+  document.getElementById("overdraftField").classList.toggle("hidden",savings);
+}
+function fillSelect(id, list=accounts, allowAll=false){
+  const s=document.getElementById(id);if(!s)return;
+  const old=s.value;s.innerHTML=allowAll?'<option value="all">All Accounts</option>':"";
+  list.forEach(a=>{const o=document.createElement("option");o.value=a.number;o.textContent=a.number+" — "+a.name+" ("+a.type+")";s.appendChild(o)});
+  if([...s.options].some(o=>o.value===old))s.value=old;
+}
+function refreshSelects(){
+  ["depositAccount","withdrawAccount","fromAccount","toAccount","removeAccount"].forEach(id=>fillSelect(id));
+  fillSelect("interestAccount",accounts.filter(a=>a.type==="Savings"));
+  fillSelect("historyAccount",accounts,true);
+}
+function renderAccounts(filter=""){
+  const grid=document.getElementById("accountGrid");
+  const data=accounts.filter(a=>String(a.number).includes(filter)||a.name.toLowerCase().includes(filter.toLowerCase()));
+  if(!data.length){grid.innerHTML='<div class="card empty">No accounts found.</div>';return}
+  grid.innerHTML=data.map(a=>`
+    <div class="card account-card">
+      <span class="badge">${a.type} Account</span>
+      <div class="account-number">Account No. ${a.number}</div>
+      <b>${a.name}</b>
+      <div class="balance">${money(a.balance)}</div>
+      <small style="color:#6b7280">${a.type==="Savings"?"Interest: "+a.interest+"%":"Overdraft: "+money(a.overdraft)}</small>
+    </div>`).join("");
+}
+function renderHistory(){
+  const selected=document.getElementById("historyAccount").value, body=document.getElementById("historyBody");
+  const data=selected==="all"?transactions:transactions.filter(t=>String(t.account)===selected);
+  body.innerHTML=data.length?data.map(t=>`<tr><td>${t.date}</td><td>${t.account}</td><td>${t.type}</td><td class="${t.amount<0?'danger':'success'}">${t.amount<0?"-":"+"}${money(Math.abs(t.amount))}</td><td class="success">✓ ${t.status}</td></tr>`).join(""):'<tr><td colspan="5" class="empty">No transactions found.</td></tr>';
+}
+function renderRecent(){
+  const r=document.getElementById("recent");
+  r.innerHTML=transactions.slice(0,4).map(t=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eef0f3;font-size:13px"><span>${t.type}<br><small style="color:#6b7280">A/C ${t.account}</small></span><b class="${t.amount<0?'danger':'success'}">${t.amount<0?"-":"+"}${money(Math.abs(t.amount))}</b></div>`).join("");
+}
+function refresh(){
+  document.getElementById("statAccounts").textContent=accounts.length;
+  document.getElementById("statBalance").textContent=money(accounts.reduce((s,a)=>s+a.balance,0));
+  document.getElementById("statTransactions").textContent=transactions.length;
+  refreshSelects();renderAccounts();renderHistory();renderRecent();
+}
+function searchAccounts(v){
+  showPage("accounts");
+  renderAccounts(v);
+}
+refresh();
+</script>
+</body>
+</html>
